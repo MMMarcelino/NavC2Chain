@@ -1,0 +1,5 @@
+{
+  "name": "stwo-gateway",
+  "type": "module",
+  "dependencies": { "express": "^4.18.2" }
+}

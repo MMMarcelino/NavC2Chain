@@ -1,0 +1,447 @@
+name: drone_swarm
+
+services:
+  besu-validator1:
+    image: hyperledger/besu:latest
+    container_name: ds-besu-validator1
+    volumes:
+      - ./Layer1/besu/config.toml:/config/config.toml:ro
+      - ./Layer1/besu/genesis.json:/config/genesis.json:ro
+      - ./Layer1/besu/nodes/validator1/data:/opt/besu/data
+    command:
+      - --config-file=/config/config.toml
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    networks:
+      appchain:
+        ipv4_address: 172.30.0.11
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  besu-validator2:
+    image: hyperledger/besu:latest
+    container_name: ds-besu-validator2
+    volumes:
+      - ./Layer1/besu/config.toml:/config/config.toml:ro
+      - ./Layer1/besu/genesis.json:/config/genesis.json:ro
+      - ./Layer1/besu/nodes/validator2/data:/opt/besu/data
+    command:
+      - --config-file=/config/config.toml
+      - --bootnodes=enode://dc76e6b0726de575578083be78c894b0cef638c1d05bfe38f6cb8f2d02822f7010fc08c59fabd717cd9410b6a8f808319f4d4ef86a29cd1ea2c6245c147eebe1@172.30.0.11:30303
+    depends_on:
+      besu-validator1:
+        condition: service_healthy
+    networks:
+      appchain:
+        ipv4_address: 172.30.0.12
+
+  besu-validator3:
+    image: hyperledger/besu:latest
+    container_name: ds-besu-validator3
+    volumes:
+      - ./Layer1/besu/config.toml:/config/config.toml:ro
+      - ./Layer1/besu/genesis.json:/config/genesis.json:ro
+      - ./Layer1/besu/nodes/validator3/data:/opt/besu/data
+    command:
+      - --config-file=/config/config.toml
+      - --bootnodes=enode://dc76e6b0726de575578083be78c894b0cef638c1d05bfe38f6cb8f2d02822f7010fc08c59fabd717cd9410b6a8f808319f4d4ef86a29cd1ea2c6245c147eebe1@172.30.0.11:30303
+    depends_on:
+      besu-validator1:
+        condition: service_healthy
+    networks:
+      appchain:
+        ipv4_address: 172.30.0.13
+
+  besu-validator4:
+    image: hyperledger/besu:latest
+    container_name: ds-besu-validator4
+    volumes:
+      - ./Layer1/besu/config.toml:/config/config.toml:ro
+      - ./Layer1/besu/genesis.json:/config/genesis.json:ro
+      - ./Layer1/besu/nodes/validator4/data:/opt/besu/data
+    command:
+      - --config-file=/config/config.toml
+      - --bootnodes=enode://dc76e6b0726de575578083be78c894b0cef638c1d05bfe38f6cb8f2d02822f7010fc08c59fabd717cd9410b6a8f808319f4d4ef86a29cd1ea2c6245c147eebe1@172.30.0.11:30303
+    depends_on:
+      besu-validator1:
+        condition: service_healthy
+    networks:
+      appchain:
+        ipv4_address: 172.30.0.14
+  mongodb:
+    image: ${MONGO_IMAGE}
+    container_name: ds-mongodb
+    command: mongod --bind_ip_all
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks: [appchain]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  localstack:
+    image: ${LOCALSTACK_IMAGE}
+    container_name: ds-localstack
+    environment:
+      - SERVICES=s3,sqs,sns,dynamodb,secretsmanager,ssm,lambda,iam,events,scheduler,sts
+      - EAGER_SERVICE_LOADING=1
+      - PERSISTENCE=1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack-data:/var/lib/localstack
+    networks: [appchain]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  madara:
+    image: ${MADARA_IMAGE}
+    container_name: ds-madara
+    depends_on:
+      besu-validator1:
+        condition: service_healthy
+    command:
+      - "--name"
+      - "DroneSwarm"
+      - "--base-path"
+      - "/data/madara"
+      - "--chain-config-path"
+      - "/configs/madara.yaml"
+      - "--rpc-port"
+      - "9944"
+      - "--rpc-admin-port"
+      - "9943"
+      - "--rpc-cors"
+      - "*"
+      - "--gateway-port"
+      - "8080"
+      - "--l1-gas-price"
+      - "1"
+      - "--blob-gas-price"
+      - "1"
+      - "--strk-per-eth"
+      - "1"
+      - "--flush-every-n-blocks"
+      - "1"
+      - "--rpc-external"
+      - "--rpc-admin"
+      - "--rpc-admin-external"
+      - "--feeder-gateway-enable"
+      - "--gateway-enable"
+      - "--gateway-external"
+      - "--sequencer"
+      - "--otel-collector-endpoint"
+      - "http://otel-collector:4317"
+      - "--otel-export-metrics"
+      - "true"
+      - "--l1-endpoint"
+      - "http://besu-validator1:8545"
+      - "--rpc-storage-proof-max-distance"
+      - "10000"
+    ports:
+      - "9944:9944"
+      - "9943:9943"
+      - "8080:8080"
+    volumes:
+      - ./configs:/configs:ro
+      - ./data/current/madara:/data/madara
+    networks: [appchain]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9944/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  pathfinder:
+    image: ${PATHFINDER_IMAGE}
+    container_name: ds-pathfinder
+    depends_on:
+      madara:
+        condition: service_healthy
+    command:
+      - "--ethereum.url"
+      - "${PATHFINDER_ETH_WS_URL}"
+      - "--data-directory"
+      - "/data/pathfinder"
+      - "--http-rpc"
+      - "0.0.0.0:9545"
+      - "--rpc.root-version"
+      - "v09"
+      - "--network"
+      - "custom"
+      - "--chain-id"
+      - "MADARA_DEVNET"
+      - "--gateway-url"
+      - "http://madara:8080/gateway"
+      - "--feeder-gateway-url"
+      - "http://madara:8080/feeder_gateway"
+      - "--storage.state-tries"
+      - "archive"
+      - "--max-rpc-connections"
+      - "64"
+      - "--gateway.request-timeout"
+      - "1000"
+      - "--is-l3"
+      - "false"
+    ports:
+      - "9545:9545"
+    volumes:
+      - ./data/pathfinder:/data/pathfinder
+    networks: [appchain]
+
+  orchestrator:
+    image: ${ORCHESTRATOR_IMAGE}
+    container_name: ds-orchestrator
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      pathfinder:
+        condition: service_started
+    env_file:
+      - ./orchestrator.env
+    volumes:
+      - ./configs:/configs:ro
+    command:
+      - "run"
+      - "--layer"
+      - "l2"
+      - "--aws"
+      - "--aws-s3"
+      - "--aws-sqs"
+      - "--aws-sns"
+      - "--settle-on-ethereum"
+      - "--da-on-ethereum"
+      - "--mongodb"
+      - "--prover"
+      - "sharp"
+      - "--port"
+      - "3000"
+      - "--admin-enabled"
+      - "--sharp-user-crt-file"
+      - "/configs/sharp_user.crt"
+      - "--sharp-user-key-file"
+      - "/configs/sharp_user.key"
+      - "--sharp-server-crt-file"
+      - "/configs/sharp_server.crt"
+    ports:
+      - "3000:3000"
+    networks: [appchain]
+    restart: on-failure:3
+
+  verifier-deploy:
+    image: ${FOUNDRY_IMAGE}
+    container_name: ds-verifier-deploy
+    profiles: ["bootstrap"]
+    depends_on:
+      besu-validator1:
+        condition: service_healthy
+    entrypoint: []
+    command:
+      - "/bin/sh"
+      - "/helper/deploy_verifier.sh"
+      - "http://besu-validator1:8545"
+      - "${ANVIL_PRIVATE_KEY}"
+    volumes:
+      - ./helper:/helper:ro
+      - ./output:/output
+    networks: [appchain]
+
+  bootstrap-base:
+    image: ${BOOTSTRAPPER_IMAGE}
+    working_dir: /app/bootstrapper-v2
+    container_name: ds-bootstrap-base
+    profiles: ["bootstrap"]
+    environment:
+      - BASE_LAYER_PRIVATE_KEY=${ANVIL_PRIVATE_KEY}
+      - RUST_LOG=info
+    command:
+      - "setup-base"
+      - "--config-path"
+      - "/configs/bootstrapper_v2.json"
+      - "--addresses-output-path"
+      - "/output/base_addresses.json"
+    volumes:
+      - ./configs:/configs
+      - ./output:/output
+    networks: [appchain]
+
+  bootstrap-madara:
+    image: ${BOOTSTRAPPER_IMAGE}
+    working_dir: /app/bootstrapper-v2
+    volumes:
+      - ./configs:/configs
+      - ./output:/output
+      - /home/BlockchainCM/madara/madara-v0.10.2/bootstrapper-v2/contracts/madara/target/dev:/app/build-artifacts/bootstrapper/cairo/target/dev:ro
+    container_name: ds-bootstrap-madara
+    profiles: ["bootstrap"]
+    environment:
+      - BASE_LAYER_PRIVATE_KEY=${ANVIL_PRIVATE_KEY}
+      - MADARA_PRIVATE_KEY=${MADARA_PRIVATE_KEY}
+      - RUST_LOG=info
+    command:
+      - "setup-madara"
+      - "--config-path"
+      - "/configs/bootstrapper_v2.json"
+      - "--base-addresses-path"
+      - "/output/base_addresses.json"
+      - "--output-path"
+      - "/output/madara_addresses.json"
+    networks: [appchain]
+
+  orchestrator-setup:
+    image: ${ORCHESTRATOR_IMAGE}
+    container_name: ds-orchestrator-setup
+    profiles: ["bootstrap"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    env_file:
+      - ./orchestrator.env
+    command:
+      - "setup"
+      - "--layer"
+      - "l2"
+      - "--aws"
+      - "--aws-s3"
+      - "--aws-sqs"
+      - "--aws-sns"
+      - "--aws-event-bridge"
+      - "--event-bridge-type"
+      - "rule"
+    networks: [appchain]
+
+  stwo-gateway:
+    image: stwo-gateway:latest
+    container_name: ds-stwo-gateway
+    environment:
+      - PROVER_BIN=/usr/local/bin/stwo-run-and-prove
+      - BOOTLOADER=/opt/simple_bootloader_compiled.json
+      - BATCH_SIZE=5
+      - FLUSH_MS=30000
+    volumes:
+      - ./prover/proving-utils/target/release/stwo-run-and-prove:/usr/local/bin/stwo-run-and-prove:ro
+      - ./prover/proving-utils/crates/cairo-program-runner-lib/resources/compiled_programs/bootloaders/simple_bootloader_compiled.json:/opt/simple_bootloader_compiled.json:ro
+    ports:
+      - "6000:6000"
+    restart: on-failure:5
+    networks: [appchain]
+
+  madara-fullnode:
+    image: ${MADARA_IMAGE}
+    container_name: ds-madara-fullnode
+    depends_on:
+      madara:
+        condition: service_healthy
+    command:
+      - "--name"
+      - "DroneSwarmFullNode"
+      - "--base-path"
+      - "/data/madara-fullnode"
+      - "--chain-config-path"
+      - "/configs/madara.yaml"
+      - "--rpc-port"
+      - "9946"
+      - "--rpc-cors"
+      - "*"
+      - "--rpc-external"
+      - "--full"
+      - "--l1-endpoint"
+      - "http://besu-validator1:8545"
+      - "--gateway-url"
+      - "http://madara:8080/gateway"
+      - "--strk-per-eth"
+      - "1"
+      - "--rpc-storage-proof-max-distance"
+      - "10000"
+    ports:
+      - "9946:9946"
+    volumes:
+      - ./configs:/configs:ro
+      - ./data/madara-fullnode:/data/madara-fullnode
+    networks: [appchain]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    container_name: ds-otel-collector
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./configs/otel-collector-config.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "9464:9464"
+    networks: [appchain]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: ds-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    networks: [appchain]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.4
+    container_name: ds-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=droneswarm
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks: [appchain]
+    restart: unless-stopped
+
+volumes:
+  mongodb-data:
+  localstack-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  appchain:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+

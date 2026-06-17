@@ -1,0 +1,15 @@
+# Secrets / contains hardcoded private keys
+.env
+orchestrator.env
+helper/deploy_verifier.sh
+Layer1/scripts/fund_l2_accounts.sh
+
+# Regenerated chain state / build output
+data/
+output/
+prover/proving-utils/
+*.log
+
+# Build artifacts
+**/target/
+node_modules/
