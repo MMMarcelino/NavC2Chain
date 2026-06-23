@@ -1,0 +1,9 @@
+{
+  "l1_gas": 10000000,
+  "message_segment_length": 1000000,
+  "n_events": 50000,
+  "state_diff_size": 1000000,
+  "sierra_gas": 500000000,
+  "n_txs": 10000,
+  "proving_gas": 500000000
+}

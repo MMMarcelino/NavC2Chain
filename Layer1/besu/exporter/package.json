@@ -1,8 +1,8 @@
 {
-  "name": "stwo-gateway",
+  "name": "besu-exporter",
   "type": "module",
   "dependencies": {
     "express": "^4.18.2",
-    "prom-client": "^15.1.3"
+    "prom-client": "^15.1.0"
   }
 }

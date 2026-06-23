@@ -339,7 +339,7 @@ services:
     environment:
       - PROVER_BIN=/usr/local/bin/stwo-run-and-prove
       - BOOTLOADER=/opt/simple_bootloader_compiled.json
-      - BATCH_SIZE=5
+      - BATCH_SIZE=20
       - FLUSH_MS=30000
     volumes:
       - ./prover/proving-utils/target/release/stwo-run-and-prove:/usr/local/bin/stwo-run-and-prove:ro
@@ -431,6 +431,21 @@ services:
     networks: [appchain]
     restart: unless-stopped
 
+  besu-exporter:
+    build:
+      context: ./Layer1/besu/exporter
+    image: besu-exporter:latest
+    container_name: ds-besu-exporter
+    environment:
+      - BESU_RPC=http://besu-validator1:8545
+      - SCRAPE_INTERVAL=5000
+    ports:
+      - "6001:6001"
+    depends_on:
+      - besu-validator1
+    networks: [appchain]
+    restart: unless-stopped
+
 volumes:
   mongodb-data:
   localstack-data:
@@ -443,5 +458,6 @@ networks:
     ipam:
       config:
         - subnet: 172.30.0.0/24
+
 
 

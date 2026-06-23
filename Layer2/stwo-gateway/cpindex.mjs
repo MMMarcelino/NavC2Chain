@@ -1,6 +1,6 @@
 import express from "express";
 import { spawn } from "node:child_process";
-import { mkdirSync, writeFileSync, existsSync, createWriteStream, readFileSync, statSync, readdirSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, createWriteStream, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { register, Gauge, Counter, Histogram } from "prom-client";
 
@@ -55,32 +55,6 @@ const jobsTotal = new Counter({
   name: "gateway_jobs_received_total",
   help: "Total number of jobs received via /add_job",
 });
-
-// ── Storage metrics ───────────────────────────────────────────────────────────
-const storageJobsDirBytes = new Gauge({
-  name: "gateway_storage_pies_bytes",
-  help: "Total disk space used by all Cairo PIE zip files in /tmp/jobs (bytes)",
-});
-
-const storageProofsDirBytes = new Gauge({
-  name: "gateway_storage_proofs_bytes",
-  help: "Total disk space used by all proof JSON files in /tmp/batches (bytes)",
-});
-
-const storageLogsDirBytes = new Gauge({
-  name: "gateway_storage_logs_bytes",
-  help: "Total disk space used by all run.log files in /tmp/batches (bytes)",
-});
-
-const storageProgramInputBytes = new Gauge({
-  name: "gateway_storage_program_inputs_bytes",
-  help: "Total disk space used by all program_input.json files in /tmp/batches (bytes)",
-});
-
-const storageTotalBytes = new Gauge({
-  name: "gateway_storage_total_bytes",
-  help: "Total disk space used by all gateway artifacts combined (bytes)",
-});
 // ─────────────────────────────────────────────────────────────────────────────
 
 const app = express();
@@ -101,56 +75,6 @@ const pending = [];
 let flushTimer = null;
 let running    = false;
 const batchQueue = [];
-
-// ── Directory size scanner ────────────────────────────────────────────────────
-function dirSize(dirPath) {
-  let total = 0;
-  try {
-    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
-      const full = join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        total += dirSize(full);
-      } else {
-        try { total += statSync(full).size; } catch (_) {}
-      }
-    }
-  } catch (_) {}
-  return total;
-}
-
-function scanStorageByType(baseDir) {
-  let pies = 0, proofs = 0, logs = 0, inputs = 0;
-  try {
-    // /tmp/jobs/<key>/cairo_pie.zip
-    for (const job of readdirSync(JOBS_DIR, { withFileTypes: true })) {
-      if (!job.isDirectory()) continue;
-      const piePath = join(JOBS_DIR, job.name, "cairo_pie.zip");
-      try { pies += statSync(piePath).size; } catch (_) {}
-    }
-    // /tmp/batches/<batchId>/{proof.json, run.log, program_input.json}
-    for (const batch of readdirSync(BATCHES_DIR, { withFileTypes: true })) {
-      if (!batch.isDirectory()) continue;
-      const batchPath = join(BATCHES_DIR, batch.name);
-      const proofPath = join(batchPath, "proof.json");
-      const logPath   = join(batchPath, "run.log");
-      const inputPath = join(batchPath, "program_input.json");
-      try { proofs += statSync(proofPath).size; } catch (_) {}
-      try { logs   += statSync(logPath).size;   } catch (_) {}
-      try { inputs += statSync(inputPath).size; } catch (_) {}
-    }
-  } catch (_) {}
-  return { pies, proofs, logs, inputs };
-}
-
-function updateStorageMetrics() {
-  const { pies, proofs, logs, inputs } = scanStorageByType();
-  storageJobsDirBytes.set(pies);
-  storageProofsDirBytes.set(proofs);
-  storageLogsDirBytes.set(logs);
-  storageProgramInputBytes.set(inputs);
-  storageTotalBytes.set(pies + proofs + logs + inputs);
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 function flush() {
   if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
@@ -225,13 +149,11 @@ function drain() {
         proofSizeBytes.set(size);
       } catch (_) {}
 
-      // update storage breakdown after each successful proof
-      updateStorageMetrics();
-
       console.log(`[gateway] ${batch.batchId} PROCESSED ${elapsedStr}s (${batch.keys.length} keys)`);
       for (const k of batch.keys) jobs.set(k, { status: "PROCESSED", batchId: batch.batchId, proofPath });
     } else {
       proofBatchesFailed.inc();
+
       console.error(`[gateway] ${batch.batchId} FAILED exit=${code} ${elapsedStr}s`);
       for (const k of batch.keys) jobs.set(k, { status: "FAILED", batchId: batch.batchId, proofPath: null });
     }
@@ -267,35 +189,12 @@ app.post("/add_job", (req, res) => {
   res.json({ code: "JOB_RECEIVED_SUCCESSFULLY" });
 });
 
-// POST /add_applicative_job -- prove aggregated PIE with Stwo (same as add_job)
+// POST /add_applicative_job
 app.post("/add_applicative_job", (req, res) => {
   const key = req.query.cairo_job_key;
   if (!key) return res.status(400).json({ code: "MISSING_JOB_KEY" });
-
-  const { cairo_pie_encoded, children_cairo_job_keys } = req.body;
-
-  if (!cairo_pie_encoded) {
-    console.log(`[gateway] add_applicative_job ${key} (no PIE -- mock: instant PROCESSED)`);
-    jobs.set(key, { status: "PROCESSED", proofPath: null });
-    return res.json({ code: "JOB_RECEIVED_SUCCESSFULLY" });
-  }
-
-  const dir = join(JOBS_DIR, key);
-  mkdirSync(dir, { recursive: true });
-  const piePath = join(dir, "cairo_pie.zip");
-  writeFileSync(piePath, Buffer.from(cairo_pie_encoded, "base64"));
-
-  jobs.set(key, { status: "QUEUED" });
-  pending.push({ key, piePath });
-
-  jobsTotal.inc();
-  jobsQueued.set(pending.length);
-
-  console.log(`[gateway] add_applicative_job ${key} pie=${cairo_pie_encoded.length}B children=${(children_cairo_job_keys||[]).length} (pending=${pending.length}/${BATCH_SIZE})`);
-
-  if (pending.length >= BATCH_SIZE) flush();
-  else maybeStartTimer();
-
+  console.log(`[gateway] add_applicative_job ${key} (mock: instant PROCESSED)`);
+  jobs.set(key, { status: "PROCESSED", proofPath: null });
   res.json({ code: "JOB_RECEIVED_SUCCESSFULLY" });
 });
 
@@ -333,8 +232,4 @@ app.get("/metrics", async (req, res) => {
   res.end(await register.metrics());
 });
 
-app.listen(6000, () => {
-  // scan existing artifacts on startup so metrics are non-zero immediately
-  updateStorageMetrics();
-  console.log(`[gateway] :6000 ready BATCH_SIZE=${BATCH_SIZE} FLUSH_MS=${FLUSH_MS}`);
-});
+app.listen(6000, () => console.log(`[gateway] :6000 ready BATCH_SIZE=${BATCH_SIZE} FLUSH_MS=${FLUSH_MS}`));

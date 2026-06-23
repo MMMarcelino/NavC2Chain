@@ -155,7 +155,7 @@ done
 ok "Madara restarted — fee charging enabled"
 
 log "Step 9/9  Starting Prometheus + Grafana + Full Node"
-$DC up -d prometheus grafana
+$DC up -d prometheus grafana besu-exporter
 ok "prometheus + grafana started"
 
 $DC up -d madara-fullnode
