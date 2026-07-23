@@ -38,7 +38,7 @@ mkdir -p "$NODE_DIR/data"
 
 docker run --rm \
   -v "$NODE_DIR/data:/opt/besu/data" \
-  hyperledger/besu:latest \
+  hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799 \
   operator generate-key-pair \
   --to=/opt/besu/data/key \
   >/dev/null 2>&1
@@ -50,7 +50,7 @@ ok "Key generated at $NODE_DIR/data/key"
 # --- Get the new validator's address ---
 ADDRESS=$(docker run --rm \
   -v "$NODE_DIR/data:/opt/besu/data" \
-  hyperledger/besu:latest \
+  hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799 \
   public-key export-address \
   --node-private-key-file=/opt/besu/data/key \
   2>/dev/null | grep -oE '0x[0-9a-fA-F]{40}' | tail -1)
@@ -88,7 +88,7 @@ log "Adding $NAME service to compose.dynamic.yaml"
 cat >> "$DYNAMIC_FILE" << YAML
 
   $NAME:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799
     container_name: ds-$NAME
     volumes:
       - ./Layer1/besu/config.toml:/config/config.toml:ro

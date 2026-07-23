@@ -2,7 +2,7 @@ name: drone_swarm
 
 services:
   besu-validator1:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799
     container_name: ds-besu-validator1
     volumes:
       - ./Layer1/besu/config.toml:/config/config.toml:ro
@@ -24,7 +24,7 @@ services:
       start_period: 10s
 
   besu-validator2:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799
     container_name: ds-besu-validator2
     volumes:
       - ./Layer1/besu/config.toml:/config/config.toml:ro
@@ -41,7 +41,7 @@ services:
         ipv4_address: 172.30.0.12
 
   besu-validator3:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799
     container_name: ds-besu-validator3
     volumes:
       - ./Layer1/besu/config.toml:/config/config.toml:ro
@@ -58,7 +58,7 @@ services:
         ipv4_address: 172.30.0.13
 
   besu-validator4:
-    image: hyperledger/besu:latest
+    image: hyperledger/besu:26.4.0@sha256:12e256a73185337f2d09fa00c6a979d9ce9a8aac4ec1e173c43f3ef88443a799
     container_name: ds-besu-validator4
     volumes:
       - ./Layer1/besu/config.toml:/config/config.toml:ro
