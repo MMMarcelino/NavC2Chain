@@ -13,3 +13,13 @@ prover/proving-utils/
 # Build artifacts
 **/target/
 node_modules/
+
+# editor / shell backups
+*.bak
+*.bak-*
+
+# Scarb build output
+Layer2/contracts/*/target/
+
+# experiment run data
+results/
