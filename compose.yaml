@@ -405,6 +405,7 @@ services:
       - "--web.enable-lifecycle"
     volumes:
       - ./configs/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./configs/alerts.yaml:/etc/prometheus/alerts.yaml:ro
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"

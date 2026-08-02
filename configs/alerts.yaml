@@ -1,0 +1,42 @@
+groups:
+  - name: navc2chain-settlement
+    rules:
+      - alert: SettlementStalled
+        expr: increase(madara_l1_block_number[15m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Anchoring has stopped"
+          description: "No L2 block has been settled on L1 for 15 minutes. Operational layer is still producing; state is unanchored."
+
+      - alert: SettlementDiverging
+        expr: rate(madara_block_produced_no[30m]) > 1.5 * rate(madara_l1_block_number[30m])
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Production is outrunning settlement"
+
+      - alert: ProvingStalled
+        expr: increase(gateway_jobs_received_total[30m]) > 0 and increase(proof_batches_total[30m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gateway is receiving jobs but producing no proof batches"
+
+      - alert: ProofBatchFailures
+        expr: increase(proof_batches_failed_total[15m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stwo proof batch failures in the last 15 minutes"
+
+      - alert: MetricsTargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus target {{ $labels.job }} is unreachable"
