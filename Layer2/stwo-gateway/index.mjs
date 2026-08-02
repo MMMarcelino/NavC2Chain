@@ -102,6 +102,66 @@ let flushTimer = null;
 let running    = false;
 const batchQueue = [];
 
+// ── Durable job state ─────────────────────────────────────────────────────────
+const jobsRequeued = new Counter({
+  name: "gateway_jobs_requeued_total",
+  help: "Jobs re-queued for proving after a gateway restart",
+});
+
+function statePath(key) { return join(JOBS_DIR, key, "state.json"); }
+
+function setJob(key, val) {
+  jobs.set(key, val);
+  try {
+    mkdirSync(join(JOBS_DIR, key), { recursive: true });
+    writeFileSync(statePath(key), JSON.stringify(val));
+  } catch (e) {
+    console.error(`[gateway] state write failed ${key}: ${e.message}`);
+  }
+}
+
+function getJob(key) {
+  if (!key) return undefined;
+  if (jobs.has(key)) return jobs.get(key);
+  try {
+    const v = JSON.parse(readFileSync(statePath(key), "utf-8"));
+    jobs.set(key, v);
+    return v;
+  } catch (_) { return undefined; }
+}
+
+function rehydrate() {
+  let restored = 0, requeued = 0;
+  let entries = [];
+  try { entries = readdirSync(JOBS_DIR, { withFileTypes: true }); } catch (_) { return; }
+
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    const key = e.name;
+    let st = null;
+    try { st = JSON.parse(readFileSync(statePath(key), "utf-8")); } catch (_) {}
+
+    if (st && st.status === "PROCESSED" && (!st.proofPath || existsSync(st.proofPath))) {
+      jobs.set(key, st);
+      restored++;
+      continue;
+    }
+
+    const piePath = join(JOBS_DIR, key, "cairo_pie.zip");
+    if (existsSync(piePath)) {
+      jobs.set(key, { status: "QUEUED" });
+      pending.push({ key, piePath });
+      jobsRequeued.inc();
+      requeued++;
+    }
+  }
+
+  jobsQueued.set(pending.length);
+  console.log(`[gateway] rehydrate: ${restored} restored, ${requeued} requeued`);
+  if (pending.length >= BATCH_SIZE) flush();
+  else maybeStartTimer();
+}
+
 // ── Directory size scanner ────────────────────────────────────────────────────
 function dirSize(dirPath) {
   let total = 0;
@@ -196,7 +256,7 @@ function drain() {
   proofBatchSize.set(batch.keys.length);
   jobsInFlight.set(batch.keys.length);
 
-  for (const k of batch.keys) jobs.set(k, { status: "IN_PROGRESS", batchId: batch.batchId, proofPath });
+  for (const k of batch.keys) setJob(k, { status: "IN_PROGRESS", batchId: batch.batchId, proofPath });
 
   const child = spawn(PROVER_BIN, [
     "--program",       BOOTLOADER,
@@ -229,11 +289,11 @@ function drain() {
       updateStorageMetrics();
 
       console.log(`[gateway] ${batch.batchId} PROCESSED ${elapsedStr}s (${batch.keys.length} keys)`);
-      for (const k of batch.keys) jobs.set(k, { status: "PROCESSED", batchId: batch.batchId, proofPath });
+      for (const k of batch.keys) setJob(k, { status: "PROCESSED", batchId: batch.batchId, proofPath });
     } else {
       proofBatchesFailed.inc();
       console.error(`[gateway] ${batch.batchId} FAILED exit=${code} ${elapsedStr}s`);
-      for (const k of batch.keys) jobs.set(k, { status: "FAILED", batchId: batch.batchId, proofPath: null });
+      for (const k of batch.keys) setJob(k, { status: "FAILED", batchId: batch.batchId, proofPath: null });
     }
     running = false;
     drain();
@@ -253,7 +313,7 @@ app.post("/add_job", (req, res) => {
   const piePath = join(dir, "cairo_pie.zip");
   writeFileSync(piePath, Buffer.from(cairo_pie_encoded, "base64"));
 
-  jobs.set(key, { status: "QUEUED" });
+  setJob(key, { status: "QUEUED" });
   pending.push({ key, piePath });
 
   jobsTotal.inc();
@@ -276,7 +336,7 @@ app.post("/add_applicative_job", (req, res) => {
 
   if (!cairo_pie_encoded) {
     console.log(`[gateway] add_applicative_job ${key} (no PIE -- mock: instant PROCESSED)`);
-    jobs.set(key, { status: "PROCESSED", proofPath: null });
+    setJob(key, { status: "PROCESSED", proofPath: null });
     return res.json({ code: "JOB_RECEIVED_SUCCESSFULLY" });
   }
 
@@ -285,7 +345,7 @@ app.post("/add_applicative_job", (req, res) => {
   const piePath = join(dir, "cairo_pie.zip");
   writeFileSync(piePath, Buffer.from(cairo_pie_encoded, "base64"));
 
-  jobs.set(key, { status: "QUEUED" });
+  setJob(key, { status: "QUEUED" });
   pending.push({ key, piePath });
 
   jobsTotal.inc();
@@ -302,7 +362,7 @@ app.post("/add_applicative_job", (req, res) => {
 // GET /get_status
 app.get("/get_status", (req, res) => {
   const key = req.query.cairo_job_key;
-  const job = jobs.get(key);
+  const job = getJob(key);
   if (!job) return res.json({ status: "UNKNOWN", validation_done: false });
   if (job.status === "PROCESSED") return res.json({ status: "PROCESSED", validation_done: true });
   if (job.status === "FAILED")    return res.json({ status: "FAILED",    validation_done: false });
@@ -312,7 +372,7 @@ app.get("/get_status", (req, res) => {
 // GET /get_proof
 app.get("/get_proof", (req, res) => {
   const key = req.query.cairo_job_key;
-  const job = jobs.get(key);
+  const job = getJob(key);
   if (!job || job.status !== "PROCESSED") return res.status(404).json({ error: "proof not ready" });
   if (!job.proofPath || !existsSync(job.proofPath)) return res.json({});
   try {
@@ -336,5 +396,6 @@ app.get("/metrics", async (req, res) => {
 app.listen(6000, () => {
   // scan existing artifacts on startup so metrics are non-zero immediately
   updateStorageMetrics();
+  rehydrate();
   console.log(`[gateway] :6000 ready BATCH_SIZE=${BATCH_SIZE} FLUSH_MS=${FLUSH_MS}`);
 });
