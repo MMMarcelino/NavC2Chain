@@ -1,57 +1,68 @@
 #!/bin/bash
+# NavC2Chain load driver
+# usage: ./load_test.sh [INTERVAL_SECONDS] [RUN_ID]
+#   env overrides: CONTRACT, URL, INTERVAL, RUN_ID
 
-CONTRACT="0x065a7e2c7f2e28f317fad7b362657d0c3447064bc56f3d30d54b99239170c461"
-URL="http://localhost:9944"
+CONTRACT="0x05341460613e3de212c2dc21d8df1b6948c6e953e1ad93a63e5f6e86bd8229f4"
+URL="${URL:-http://localhost:9944}"
 ACCOUNTS=("PTDrone" "ESDrone" "FRDrone" "UKDrone")
-INTERVAL=${1:-15}  # seconds between rounds, default 15
+INTERVAL="${INTERVAL:-${1:-15}}"
+RUN_ID="${RUN_ID:-${2:-adhoc}}"
 
-echo "================================================"
-echo "NavC2Chain Load Test"
+OUTDIR="results/$RUN_ID"; mkdir -p "$OUTDIR"
+CSV="$OUTDIR/driver.csv"
+[ -f "$CSV" ] || echo "utc_ts,epoch,round,txs_total,round_ms,errors" > "$CSV"
+
+rpc() { curl -s -X POST "$URL" -H 'Content-Type: application/json' \
+        -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"$1\",\"params\":$2}"; }
+
+echo "=== NavC2Chain Load Test ==="
 echo "Contract : $CONTRACT"
-echo "Accounts : ${ACCOUNTS[*]}"
-echo "Interval : ${INTERVAL}s"
-echo "Press Ctrl+C to stop"
-echo "================================================"
+echo "URL      : $URL"
+echo "Interval : ${INTERVAL}s   Run: $RUN_ID"
 
-round=0
-total_tx=0
-start_time=$(date +%s)
+# ---- preflight -------------------------------------------------------------
+if [ "$CONTRACT" = "0xREPLACE_ME" ]; then
+  echo "FATAL: set CONTRACT at the top of the script"; exit 1
+fi
+if ! rpc starknet_getClassHashAt "[\"latest\",\"$CONTRACT\"]" | grep -q '"result"'; then
+  echo "FATAL: contract $CONTRACT not found on this chain (stale address?)"; exit 1
+fi
+for a in "${ACCOUNTS[@]}"; do
+  addr=$(sncast account list 2>/dev/null | grep -A8 -- "- ${a}:" | awk '$1=="address:"{print $2; exit}')
+  if [ -z "$addr" ]; then echo "FATAL: $a not in sncast registry"; exit 1; fi
+  if ! rpc starknet_getNonce "[\"latest\",\"$addr\"]" | grep -q '"result"'; then
+    echo "FATAL: $a ($addr) not deployed on this chain"; exit 1
+  fi
+done
+echo "preflight OK — contract and ${#ACCOUNTS[@]} accounts live"
+echo "logging to $CSV"
+echo "Ctrl+C to stop"
+
+# ---- main loop -------------------------------------------------------------
+round=0; total_tx=0; err_total=0; start_time=$(date +%s)
+trap 'el=$(( $(date +%s)-start_time )); [ $el -eq 0 ] && el=1;
+      echo; echo "=== stopped: $total_tx tx in ${el}s = $(awk -v t=$total_tx -v e=$el "BEGIN{printf \"%.2f\", t/e}") tx/s, $err_total errors ===";
+      exit 0' INT TERM
 
 while true; do
-    round=$((round + 1))
-    round_start=$(date +%s%3N)
-    echo ""
-    echo "[$(date +%T)] Round $round — firing ${#ACCOUNTS[@]} transactions"
-
-    pids=()
-    for account in "${ACCOUNTS[@]}"; do
-        sncast --account $account invoke \
-            --url $URL \
-            --contract-address $CONTRACT \
-            --function increase \
-            --calldata 1 > /tmp/sncast_${account}.log 2>&1 &
-        pids+=($!)
+  round=$((round+1)); rs=$(date +%s%3N); pids=()
+  for a in "${ACCOUNTS[@]}"; do
+    sncast --account "$a" invoke --url "$URL" \
+      --contract-address "$CONTRACT" --function report_position --calldata 4123456 8912345 10000 0x4f4b \
+      > "/tmp/sncast_${a}.log" 2>&1 &
+    pids+=($!)
+  done
+  fails=0
+  for p in "${pids[@]}"; do wait "$p" || fails=$((fails+1)); done
+  re=$(date +%s%3N); rms=$((re-rs))
+  total_tx=$((total_tx+${#ACCOUNTS[@]})); err_total=$((err_total+fails))
+  el=$(( (re/1000)-start_time )); [ $el -eq 0 ] && el=1
+  tps=$(awk -v t=$total_tx -v e=$el 'BEGIN{printf "%.2f", t/e}')
+  echo "[$(date -u +%T)] r$round ${rms}ms | total=$total_tx | avg=${tps} tx/s | err=$fails"
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$(date -u +%s),$round,$total_tx,$rms,$fails" >> "$CSV"
+  [ "$fails" -gt 0 ] && for a in "${ACCOUNTS[@]}"; do
+      grep -qi 'error' "/tmp/sncast_${a}.log" && echo "   [$a] $(tail -1 "/tmp/sncast_${a}.log")"
     done
-
-    # wait for all to complete
-    for pid in "${pids[@]}"; do
-        wait $pid
-    done
-
-    round_end=$(date +%s%3N)
-    round_ms=$((round_end - round_start))
-    total_tx=$((total_tx + ${#ACCOUNTS[@]}))
-    elapsed=$(( (round_end / 1000) - start_time ))
-    tps=$(echo "scale=2; $total_tx / $elapsed" | bc)
-
-    echo "[$(date +%T)] Round $round done in ${round_ms}ms | Total txs: $total_tx | Avg TPS: $tps"
-
-    # print any errors
-    for account in "${ACCOUNTS[@]}"; do
-        if grep -q "Error\|error" /tmp/sncast_${account}.log 2>/dev/null; then
-            echo "  [$account] ERROR: $(cat /tmp/sncast_${account}.log | tail -1)"
-        fi
-    done
-
-    sleep $INTERVAL
+  sleep "$INTERVAL"
 done
