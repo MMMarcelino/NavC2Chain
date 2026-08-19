@@ -1,0 +1,10 @@
+[package]
+name = "l2_authorisation_registry"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = ">=2.9.4"
+
+[[target.starknet-contract]]
+sierra = true

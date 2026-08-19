@@ -21,3 +21,18 @@ scrape_configs:
       - targets: ['besu-exporter:6001']
         labels:
           stack: 'drone_swarm'
+
+  - job_name: 'besu'
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - 'besu-validator1:9545'
+          - 'besu-validator2:9545'
+          - 'besu-validator3:9545'
+          - 'besu-validator4:9545'
+          - 'besu-validator5:9545'
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: 'besu-(validator[0-9]+):.*'
+        target_label: node
+        replacement: '$1'

@@ -1,0 +1,16 @@
+{"ts":"2026-08-05T10:49:52.973Z","account":"ESUSV","seq":0,"tx":"0x37a3895ec9e71d949ca2e8b908bd044d83796ef4b575d3625795905f27210d5","nonce":373,"submit_ms":246,"accept_ms":2261,"status":"accepted"}
+{"ts":"2026-08-05T10:49:53.973Z","account":"FRUAV","seq":1,"tx":"0x7a3b155a7c069d97a54c15575b335676dba796f8a74a8124e80f11c4274e725","nonce":373,"submit_ms":49,"accept_ms":2072,"status":"accepted"}
+{"ts":"2026-08-05T10:49:54.973Z","account":"PTDrone","seq":2,"tx":"0x4c7a772d8b21b55f8140c95c8d1185c6d8b05c70751009118551276d1152875","nonce":386,"submit_ms":68,"accept_ms":2078,"status":"accepted"}
+{"ts":"2026-08-05T10:49:55.972Z","account":"UKUUV","seq":3,"tx":"0xd04bca94d6ef2e7662d4cc8fd9f5092cc58c22334f11adff31abc3b7ade344","nonce":371,"submit_ms":52,"accept_ms":2059,"status":"accepted"}
+{"ts":"2026-08-05T10:49:58.594Z","account":"FRUAV","seq":5,"tx":"0x64415fb81868fe07263a01b97f091e01bb39ecb755d358e93bcc7cebcb79ab2","nonce":374,"submit_ms":25,"accept_ms":2030,"status":"accepted"}
+{"ts":"2026-08-05T10:49:58.594Z","account":"ESUSV","seq":4,"tx":"0x352b112edb837c83102454f92da925fa5b8d88eff41535509f2597aae311af7","nonce":374,"submit_ms":25,"accept_ms":2030,"status":"accepted"}
+{"ts":"2026-08-05T10:49:59.595Z","account":"PTDrone","seq":6,"tx":"0x2ed34d5304f938e096ea251f1d8d2a8165bcdd695523904fa9fe8975071671","nonce":387,"submit_ms":24,"accept_ms":2026,"status":"accepted"}
+{"ts":"2026-08-05T10:50:00.594Z","account":"UKUUV","seq":7,"tx":"0x31d8b2f3b264ff7973ee7b37c12a4b851bdca2064ec94b829120b693902c1e3","nonce":372,"submit_ms":25,"accept_ms":2030,"status":"accepted"}
+{"ts":"2026-08-05T10:50:08.520Z","account":"ESUSV","seq":8,"tx":"0x10a17047bede71a228082442a424f9e30fd1466ad755b1754a3ccb4185685f5","nonce":375,"submit_ms":27,"accept_ms":2033,"status":"accepted"}
+{"ts":"2026-08-05T10:50:08.520Z","account":"FRUAV","seq":9,"tx":"0x275a8665cbb55c69f52846be0ab9ebe240348c8704e84993f546dfc5e1b3b03","nonce":375,"submit_ms":29,"accept_ms":2033,"status":"accepted"}
+{"ts":"2026-08-05T10:50:09.521Z","account":"PTDrone","seq":10,"tx":"0x7cbe87834e4da779635d71c4e934034de07ad654fea781fdf366cf90edaa040","nonce":388,"submit_ms":27,"accept_ms":2033,"status":"accepted"}
+{"ts":"2026-08-05T10:50:10.520Z","account":"UKUUV","seq":11,"tx":"0x3d39d53963c7c7b97803c18182f7797753372702ab229bb51e169d591fb2795","nonce":373,"submit_ms":26,"accept_ms":2031,"status":"accepted"}
+{"ts":"2026-08-05T10:50:18.745Z","account":"FRUAV","seq":13,"tx":"0x4615f9f5e4ad9befcfdf6f13cbb99fa915a50b1ce1187d6d1eaf98d077c5361","nonce":376,"submit_ms":26,"accept_ms":2031,"status":"accepted"}
+{"ts":"2026-08-05T10:50:18.744Z","account":"ESUSV","seq":12,"tx":"0x7c581039323bf1bea574998bd263a077a00b686831bcea67834fac52ae06f64","nonce":376,"submit_ms":27,"accept_ms":2032,"status":"accepted"}
+{"ts":"2026-08-05T10:50:19.746Z","account":"PTDrone","seq":14,"tx":"0x57f453274678a2ebdcf4cb4a79e520ae5beca604faa3d424cf6bfd3b80197ea","nonce":389,"submit_ms":22,"accept_ms":2028,"status":"accepted"}
+{"ts":"2026-08-05T10:50:20.746Z","account":"UKUUV","seq":15,"tx":"0x50288ca9c0f0e54b353627f1f39434b0f6fd373347816b7e4bb0f335a2604b0","nonce":374,"submit_ms":23,"accept_ms":2029,"status":"accepted"}

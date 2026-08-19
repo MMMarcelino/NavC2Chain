@@ -1,0 +1,16 @@
+{
+  "name": "navc2chain-driver",
+  "version": "1.0.0",
+  "description": "Load driver for the NavC2Chain Chapter 6 experimental campaign",
+  "type": "module",
+  "main": "driver.js",
+  "scripts": {
+    "start": "node driver.js"
+  },
+  "dependencies": {
+    "starknet": "^10.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

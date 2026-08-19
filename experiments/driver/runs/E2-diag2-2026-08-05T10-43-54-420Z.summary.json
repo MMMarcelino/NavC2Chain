@@ -1,0 +1,37 @@
+{
+  "label": "E2-diag2",
+  "elapsed_s": 30,
+  "target_rate_tps": 1,
+  "submitted": 30,
+  "accepted": 14,
+  "failed": 16,
+  "achieved_tps": 0.467,
+  "latency_ms": {
+    "mean": 2043,
+    "p50": 2030,
+    "p90": 2058,
+    "max": 2174
+  },
+  "per_account": {
+    "ESUSV": {
+      "submitted": 8,
+      "accepted": 4,
+      "failed": 4
+    },
+    "FRUAV": {
+      "submitted": 8,
+      "accepted": 4,
+      "failed": 4
+    },
+    "PTDrone": {
+      "submitted": 7,
+      "accepted": 3,
+      "failed": 4
+    },
+    "UKUUV": {
+      "submitted": 7,
+      "accepted": 3,
+      "failed": 4
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "label": "E2-rate-5-take2",
+  "elapsed_s": 0.6,
+  "target_rate_tps": 5,
+  "submitted": 3,
+  "accepted": 0,
+  "failed": 3,
+  "achieved_tps": 0,
+  "latency_ms": null,
+  "per_account": {
+    "ESUSV": {
+      "submitted": 1,
+      "accepted": 0,
+      "failed": 1
+    },
+    "FRUAV": {
+      "submitted": 1,
+      "accepted": 0,
+      "failed": 1
+    },
+    "PTDrone": {
+      "submitted": 1,
+      "accepted": 0,
+      "failed": 1
+    }
+  }
+}

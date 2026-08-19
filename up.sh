@@ -26,13 +26,30 @@ if [ "$RESUME" -eq 1 ]; then
 fi
 
 log "Tearing down previous run + wiping state"
-$DC --profile bootstrap down -v --remove-orphans 2>/dev/null || true
+if [ -f compose.dynamic.yaml ]; then
+  $DC -f compose.yaml -f compose.dynamic.yaml --profile bootstrap down -v --remove-orphans || true
+else
+  $DC --profile bootstrap down -v --remove-orphans || true
+fi
 sudo rm -rf data output
 rm -f compose.dynamic.yaml
-sudo rm -rf ./Layer1/besu/nodes/validator1/data/database
-sudo rm -rf ./Layer1/besu/nodes/validator2/data/database
-sudo rm -rf ./Layer1/besu/nodes/validator3/data/database
-sudo rm -rf ./Layer1/besu/nodes/validator4/data/database
+
+# Founding validators: wipe chain state only. Their keys must survive —
+# the matching addresses are baked into genesis.json extraData.
+for v in validator1 validator2 validator3 validator4; do
+  sudo rm -rf "./Layer1/besu/nodes/$v/data/database"
+done
+
+# Dynamically admitted validators: remove entirely. Their membership lived
+# only in QBFT block headers, which this reset destroys, so the key is dead.
+for d in ./Layer1/besu/nodes/*/; do
+  [ -d "$d" ] || continue
+  n="$(basename "$d")"
+  case "$n" in
+    validator1|validator2|validator3|validator4) ;;
+    *) printf '  removing dynamic validator node %s\n' "$n"; sudo rm -rf "$d" ;;
+  esac
+done
 mkdir -p data/madara data/pathfinder data/madara-fullnode output
 sed -i 's/^eth_core_contract_address:.*/eth_core_contract_address: "0x0000000000000000000000000000000000000000"/' configs/madara.yaml
 sed -i 's/^MADARA_ORCHESTRATOR_MOCK_VERIFIER_ADDRESS=.*/MADARA_ORCHESTRATOR_MOCK_VERIFIER_ADDRESS=__VERIFIER_ADDRESS__/' orchestrator.env

@@ -23,3 +23,22 @@ Layer2/contracts/*/target/
 
 # experiment run data
 results/
+data/
+output/
+experiments/runs/
+experiments/extracts/
+experiments/logs/
+archive/
+chapters/
+*.tgz
+node_modules/
+orchestrator.env
+Layer1/besu/nodes/
+Layer1/besu/networkFiles/keys/
+Layer1/besu/.keygen.*/
+prover/proving-utils/
+Layer1/contracts/warfare-authority/lib/
+Layer1/contracts/warfare-authority/out/
+Layer1/contracts/warfare-authority/cache/
+Layer2/contracts/*/target/
+Layer1/contracts/warfare-authority/foundry.lock

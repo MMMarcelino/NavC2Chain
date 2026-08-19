@@ -1,0 +1,37 @@
+{
+  "label": "campaign-unitloss-5",
+  "elapsed_s": 14400,
+  "target_rate_tps": 0.4,
+  "submitted": 5760,
+  "accepted": 701,
+  "failed": 5059,
+  "achieved_tps": 0.049,
+  "latency_ms": {
+    "mean": 2031,
+    "p50": 2027,
+    "p90": 2045,
+    "max": 2187
+  },
+  "per_account": {
+    "ESUSV": {
+      "submitted": 1440,
+      "accepted": 176,
+      "failed": 1264
+    },
+    "FRUAV": {
+      "submitted": 1440,
+      "accepted": 175,
+      "failed": 1265
+    },
+    "PTDrone": {
+      "submitted": 1440,
+      "accepted": 175,
+      "failed": 1265
+    },
+    "UKUUV": {
+      "submitted": 1440,
+      "accepted": 175,
+      "failed": 1265
+    }
+  }
+}

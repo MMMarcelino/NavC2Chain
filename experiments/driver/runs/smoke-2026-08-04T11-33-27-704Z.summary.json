@@ -1,0 +1,27 @@
+{
+  "label": "smoke",
+  "elapsed_s": 10,
+  "target_rate_tps": 0.2,
+  "submitted": 2,
+  "accepted": 2,
+  "failed": 0,
+  "achieved_tps": 0.2,
+  "latency_ms": {
+    "mean": 2057,
+    "p50": 2070,
+    "p90": 2070,
+    "max": 2070
+  },
+  "per_account": {
+    "ESDrone": {
+      "submitted": 1,
+      "accepted": 1,
+      "failed": 0
+    },
+    "FRDrone": {
+      "submitted": 1,
+      "accepted": 1,
+      "failed": 0
+    }
+  }
+}
