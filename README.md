@@ -92,8 +92,4 @@ A few things are intentionally excluded — see `.gitignore`:
 - Build artifacts (`cache/`, `out/`, `target/`, `node_modules/`) and raw
   experiment run output (`experiments/logs/`, `experiments/runs/`,
   `experiments/extracts/`).
-
-## Status
-
-This is active thesis work. See [`docs/KNOWN_ISSUES.pdf`](docs/KNOWN_ISSUES.pdf)
-for the current set of open technical problems and the workarounds in place.
+  
