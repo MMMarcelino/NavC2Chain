@@ -29,11 +29,6 @@ build, run, and evaluate that architecture.
 - A Grafana/Prometheus/OpenTelemetry observability stack for block
   production, mempool, and proving metrics.
 
-See [`docs/ARCHITECTURE.pdf`](docs/ARCHITECTURE.pdf) for the conceptual
-model — what's implemented today versus what's described as future work —
-and the argument for why a rotating, untrusted L2 sequencer is safe under
-this design.
-
 ## Repository layout
 
 ```
