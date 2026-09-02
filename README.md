@@ -47,7 +47,7 @@ Layer2/stwo-gateway/              Custom SHARP-compatible Node.js gateway
 helper/                           Solidity mock verifier
 prover/                           Stwo prover source and build (not vendored — see docs/BUILD.pdf)
 experiments/                      Load-testing driver, experimental campaign configs, results and figures
-docs/                             Architecture notes, known issues, build instructions (PDF)
+docs/                              Build instructions (PDF)
 archive/                          Superseded configs and scripts kept for reference
 ```
 
@@ -83,8 +83,12 @@ A few things are intentionally excluded — see `.gitignore`:
 - `data/` and `output/` — live chain state and bootstrapper-generated
   addresses, both fully regenerated on every fresh `./up.sh` run.
 - `prover/proving-utils/` — the cloned Stwo prover source and its compiled
-  binary. Built separately per `docs/BUILD.pdf`, not vendored here.
+  binary, not vendored here.
 - Build artifacts (`cache/`, `out/`, `target/`, `node_modules/`) and raw
   experiment run output (`experiments/logs/`, `experiments/runs/`,
   `experiments/extracts/`).
   
+
+## Status
+
+This is active thesis work.
