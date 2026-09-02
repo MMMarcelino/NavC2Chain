@@ -1,44 +1,37 @@
-# Secrets / contains hardcoded private keys
+# ── Secrets: files embedding development private keys ──
 .env
 orchestrator.env
 helper/deploy_verifier.sh
 Layer1/scripts/fund_l2_accounts.sh
-
-# Regenerated chain state / build output
-data/
-output/
-prover/proving-utils/
-*.log
-
-# Build artifacts
-**/target/
-node_modules/
-
-# editor / shell backups
-*.bak
-*.bak-*
-
-# Scarb build output
-Layer2/contracts/*/target/
-
-# experiment run data
-results/
-data/
-output/
-experiments/runs/
-experiments/extracts/
-experiments/logs/
-archive/
-chapters/
-*.tgz
-node_modules/
-orchestrator.env
 Layer1/besu/nodes/
 Layer1/besu/networkFiles/keys/
 Layer1/besu/.keygen.*/
+experiments/driver/runs/orchestrator_env.txt
+
+# ── Regenerated at every deployment ──
+data/
+output/
+compose.dynamic.yaml
+*.log
+
+# ── Built from source, not vendored ──
 prover/proving-utils/
+node_modules/
+**/target/
 Layer1/contracts/warfare-authority/lib/
 Layer1/contracts/warfare-authority/out/
 Layer1/contracts/warfare-authority/cache/
-Layer2/contracts/*/target/
 Layer1/contracts/warfare-authority/foundry.lock
+
+# ── Experiment data: keep summaries, drop raw traces ──
+experiments/driver/runs/*.jsonl
+experiments/driver/runs/void/
+experiments/logs_archive/
+results/
+archive/
+chapters/
+*.tgz
+
+# ── Editor / shell backups ──
+*.bak
+*.bak-*

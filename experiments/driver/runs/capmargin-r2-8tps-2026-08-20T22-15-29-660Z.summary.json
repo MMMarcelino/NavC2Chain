@@ -1,0 +1,37 @@
+{
+  "label": "capmargin-r2-8tps",
+  "elapsed_s": 902,
+  "target_rate_tps": 8,
+  "submitted": 7200,
+  "accepted": 7200,
+  "failed": 0,
+  "achieved_tps": 7.982,
+  "latency_ms": {
+    "mean": 2024,
+    "p50": 2023,
+    "p90": 2028,
+    "max": 2212
+  },
+  "per_account": {
+    "ESUSV": {
+      "submitted": 1800,
+      "accepted": 1800,
+      "failed": 0
+    },
+    "FRUAV": {
+      "submitted": 1800,
+      "accepted": 1800,
+      "failed": 0
+    },
+    "PTDrone": {
+      "submitted": 1800,
+      "accepted": 1800,
+      "failed": 0
+    },
+    "UKUUV": {
+      "submitted": 1800,
+      "accepted": 1800,
+      "failed": 0
+    }
+  }
+}

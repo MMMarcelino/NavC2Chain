@@ -1,0 +1,37 @@
+{
+  "label": "s1-post",
+  "elapsed_s": 1202.2,
+  "target_rate_tps": 3,
+  "submitted": 3601,
+  "accepted": 3601,
+  "failed": 0,
+  "achieved_tps": 2.995,
+  "latency_ms": {
+    "mean": 2027,
+    "p50": 2025,
+    "p90": 2040,
+    "max": 2158
+  },
+  "per_account": {
+    "ESUSV": {
+      "submitted": 901,
+      "accepted": 901,
+      "failed": 0
+    },
+    "FRUAV": {
+      "submitted": 900,
+      "accepted": 900,
+      "failed": 0
+    },
+    "PTDrone": {
+      "submitted": 900,
+      "accepted": 900,
+      "failed": 0
+    },
+    "UKUUV": {
+      "submitted": 900,
+      "accepted": 900,
+      "failed": 0
+    }
+  }
+}

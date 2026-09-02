@@ -1,0 +1,37 @@
+{
+  "label": "pilot-seq",
+  "elapsed_s": 848.8,
+  "target_rate_tps": 3,
+  "submitted": 655,
+  "accepted": 360,
+  "failed": 295,
+  "achieved_tps": 0.424,
+  "latency_ms": {
+    "mean": 2789,
+    "p50": 2022,
+    "p90": 2037,
+    "max": 94117
+  },
+  "per_account": {
+    "ESUSV": {
+      "submitted": 164,
+      "accepted": 90,
+      "failed": 74
+    },
+    "FRUAV": {
+      "submitted": 164,
+      "accepted": 90,
+      "failed": 74
+    },
+    "PTDrone": {
+      "submitted": 164,
+      "accepted": 90,
+      "failed": 74
+    },
+    "UKUUV": {
+      "submitted": 163,
+      "accepted": 90,
+      "failed": 73
+    }
+  }
+}
